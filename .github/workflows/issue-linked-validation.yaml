@@ -1,0 +1,51 @@
+name: PR linked with a valid issue ?
+
+on:
+  pull_request_target:
+    types: [ edited, synchronize, opened, reopened ]
+
+jobs:
+  checker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Issue Validator
+        uses: HarshCasper/validate-issues-over-pull-requests@v0.1.1
+        id: validator
+        with:
+          prbody: ${{ github.event.pull_request.body }}
+          prurl: ${{ github.event.pull_request.url }}
+          
+      - name: PR has a valid Issue
+        if: ${{ steps.validator.outputs.valid == 1 }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PRNUM: ${{ github.event.pull_request.number }}
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          if [[ "$TITLE" == *"doc:"* || "$TITLE" == *"docs:"* || "$TITLE" == *"chore:"* ]]; then
+            echo "Skipping validation as this is a PR for documentation"
+            exit 0
+          else
+            gh pr edit $PRNUM --add-label "PR:Ready-to-Review"
+            gh pr edit $PRNUM --remove-label "PR: Issue-verification-failed"
+          fi
+          
+      - name: PR has no valid Issue
+        if: ${{ steps.validator.outputs.valid == 0 }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PRNUM: ${{ github.event.pull_request.number }}
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          if [[ "$TITLE" == *"doc:"* || "$TITLE" == *"docs:"* || "$TITLE" == *"chore:"* ]]; then
+            echo "Skipping validation as this is a PR for documentation"
+            exit 0
+          else
+            gh pr comment $PRNUM --body "PR is not linked to any issue, please make the corresponding changes in the body."
+            gh pr edit $PRNUM --add-label "PR: Issue-verification-failed"
+            gh pr edit $PRNUM --remove-label "PR:Ready-to-Review"
+            exit 1
+          fi
