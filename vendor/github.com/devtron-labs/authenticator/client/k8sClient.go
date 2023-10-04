@@ -135,7 +135,7 @@ const (
 
 	SettingServerSignatureKey   = "server.secretkey"
 	SettingURLKey               = "url"
-	DevtronDefaultNamespaceName = "devtroncd"
+	DevtronDefaultNamespaceName = "devtroncd-1"
 	CallbackEndpoint            = "/auth/callback"
 	SettingDexConfigKey         = "dex.config"
 	DexCallbackEndpoint         = "/api/dex/callback"
